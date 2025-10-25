@@ -6,4 +6,5 @@ public class GameStartObjective : MonoBehaviour
     {
         var ui = FindObjectOfType<ObjectiveUI>();
         ui.SetObjective("Find your dad's letter.");
+    }
 }
