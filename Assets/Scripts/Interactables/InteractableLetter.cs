@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class InteractableLetter : MonoBehaviour, IInteractable
 {
@@ -11,7 +11,15 @@ public class InteractableLetter : MonoBehaviour, IInteractable
 
     public void OnInteract()
     {
+        // Open letter
         letterUIPanel.GetComponent<LetterUIManager>().OpenLetter();
+
+        // Mission complete
+        var objectiveUI = FindObjectOfType<ObjectiveUI>();
+        if (objectiveUI != null)
+            objectiveUI.CompleteObjective();
+
+        // Stop the game
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
