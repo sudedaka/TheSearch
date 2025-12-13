@@ -1,6 +1,7 @@
 using UnityEngine;
-using System.Collections; // Coroutine için gerekli
+using System.Collections; 
 using System.Collections.Generic;
+using UnityEngine.Rendering;
 
 public class GameManager : MonoBehaviour
 {
@@ -103,10 +104,14 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // --- İŞTE SİHİR BURADA: DÖKME ANİMASYONU ---
+    // dökme animsyonu
     IEnumerator PourSequence(BottleController source, BottleController target)
     {
-        isAnimating = true; // Oyuncunun tıklamasını engelle
+        isAnimating = true; // kullanıcaın animasyon ilerlerken başka yere tıklamasını engellemek için
+        
+        SortingGroup sourceSort = source.GetComponent<SortingGroup>();
+       
+        sourceSort.sortingOrder = 20;
 
         // 1. Pozisyonları Kaydet
         Vector3 originalPos = source.transform.position;
@@ -174,6 +179,8 @@ public class GameManager : MonoBehaviour
         // Her şeyin tam oturduğundan emin ol
         source.transform.position = originalPos;
         source.transform.rotation = originalRot;
+        
+        sourceSort.sortingOrder = 0;
 
         CheckWinCondition();
         DeselectBottle();
