@@ -74,7 +74,7 @@ public class GameManager : MonoBehaviour
             {
                 selectedBottle = clickedBottle;
                 // Hafif büyüme efekti
-                selectedBottle.transform.localScale = new Vector3(1.1f, 1.1f, 1f);
+                selectedBottle.transform.localScale = selectedBottle.GetOriginalScale() * 1.1f;
             }
         }
         else
@@ -192,7 +192,7 @@ public class GameManager : MonoBehaviour
     {
         if (selectedBottle != null)
         {
-            selectedBottle.transform.localScale = Vector3.one;
+            selectedBottle.transform.localScale = selectedBottle.GetOriginalScale();
             selectedBottle = null;
         }
     }
@@ -206,7 +206,7 @@ public class GameManager : MonoBehaviour
         // 2. Eğer o an seçili (büyümüş) bir şişe varsa seçimini kaldır
         if (selectedBottle != null)
         {
-            selectedBottle.transform.localScale = Vector3.one;
+            selectedBottle.transform.localScale = selectedBottle.GetOriginalScale();
             selectedBottle = null;
         }
 

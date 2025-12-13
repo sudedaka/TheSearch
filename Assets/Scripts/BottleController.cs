@@ -15,12 +15,14 @@ public class BottleController : MonoBehaviour
 
     private Vector3 originalPosition;
     private Quaternion originalRotation;
+    private Vector3 originalScale;
 
     void Awake() 
     {
       
         originalPosition = transform.position;
         originalRotation = transform.rotation;
+        originalScale = transform.localScale;
     }
     // -------------------------------------------------------
 
@@ -133,8 +135,10 @@ UpdateVisuals(); // şişelerdeki renklerin oyun başladığında gözükmemeisi
         liquidStack.Clear(); // Stack verisini sil
         UpdateVisuals();     // Görüntüyü güncelle (Boş hale getir)
     }
-
-    
+    public Vector3 GetOriginalScale()
+    {
+        return originalScale;
+    }
     // Restart tuşuna basıldığında GameManager bu fonksiyonu çağıracak.
     public void ResetPosition()
     {
@@ -143,6 +147,6 @@ UpdateVisuals(); // şişelerdeki renklerin oyun başladığında gözükmemeisi
         transform.rotation = originalRotation;
         
         // Eğer seçili olduğu için büyümüşse, boyutunu normale döndür
-        transform.localScale = Vector3.one;
+        transform.localScale = originalScale;
     }
 }
