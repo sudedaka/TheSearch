@@ -18,7 +18,10 @@ public class MemoryManager : MonoBehaviour
     public AudioSource fatherVoice;
 
     [Header("Dialogue Subtitle")]
-    public MemoryDialogueSubtitle memorySubtitle; // 🔥 SADECE BU EKLENDİ
+    public MemoryDialogueSubtitle memorySubtitle;
+
+    [Header("Memory Objects")]
+    public GameObject memoryActorsRoot; // 🔥 BABA + CHILDHOOD BETH PARENT
 
     private bool isPlaying = false;
 
@@ -26,6 +29,10 @@ public class MemoryManager : MonoBehaviour
     {
         if (bethVoice) bethVoice.Stop();
         if (fatherVoice) fatherVoice.Stop();
+
+        // 🔒 oyun başında memory objeleri kapalı
+        if (memoryActorsRoot)
+            memoryActorsRoot.SetActive(false);
     }
 
     public void PlayMemory()
@@ -38,6 +45,10 @@ public class MemoryManager : MonoBehaviour
     {
         isPlaying = true;
 
+        // 🔥 MEMORY OBJELERİNİ AÇ
+        if (memoryActorsRoot)
+            memoryActorsRoot.SetActive(true);
+
         if (playerController)
             playerController.enabled = false;
 
@@ -48,7 +59,7 @@ public class MemoryManager : MonoBehaviour
 
         yield return StartCoroutine(Fade(0f, 0.4f));
 
-        // 🔹 BETH
+        // 🔹 BETH KONUŞMASI
         if (bethVoice && bethVoice.clip)
         {
             bethVoice.Play();
@@ -63,7 +74,7 @@ public class MemoryManager : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f);
 
-        // 🔹 FATHER
+        // 🔹 FATHER KONUŞMASI
         if (fatherVoice && fatherVoice.clip)
         {
             fatherVoice.Play();
@@ -85,6 +96,13 @@ public class MemoryManager : MonoBehaviour
 
         if (playerController)
             playerController.enabled = true;
+
+        // 🔥 MEMORY BİTTİ → OBJELERİ KAPAT
+        if (memoryActorsRoot)
+            memoryActorsRoot.SetActive(false);
+
+        if (memorySubtitle != null)
+            memorySubtitle.Clear();
 
         isPlaying = false;
     }
