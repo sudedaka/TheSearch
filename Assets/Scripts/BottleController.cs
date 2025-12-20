@@ -5,62 +5,63 @@ public class BottleController : MonoBehaviour
 {
     // Şişe içindeki sıvıların görselleri için (0 en alt, 3 en üst)
     public SpriteRenderer[] liquidRenderers;
+    public GameObject[] questionMarks;
 
-    // Şişedeki renk verilerini tutan Stack (Last In First Out)
+    [Header("Gizemli Mod Ayarları")]
+    public bool isMysteryMode = false;
+    public Color mysteryColor = Color.gray;
+
+    // Şişedeki renk verilerini tutan Stack
     public Stack<Color> liquidStack = new Stack<Color>();
+    
+    // YENİ: Hangi katmanın görünür olduğu bilgisini tutan liste
+    // (True: Görünür, False: Soru İşareti)
+    private List<bool> revealedLayers = new List<bool>();
 
-    // Şişenin alabileceği max sıvı sayısı
     private int capacity = 4;
-
-
     private Vector3 originalPosition;
     private Quaternion originalRotation;
     private Vector3 originalScale;
 
-    void Awake() 
+    void Awake()
     {
-      
         originalPosition = transform.position;
         originalRotation = transform.rotation;
         originalScale = transform.localScale;
     }
-    // -------------------------------------------------------
 
     void Start()
     {
         UpdateVisuals();
-            
-        //Test part for making sure one bottle has luqids in it an other has.
-
-/*
-
-if (gameObject.name == "bottle")
-
-{
-
-
-PushLiquid(Color.blue);
-
-PushLiquid(Color.red);
-
-PushLiquid(Color.yellow);
-
-}
-
-// Başlangıçta görselleri güncelle
-
-// liquidStack.Push(Color.blue);
-
-UpdateVisuals(); // şişelerdeki renklerin oyun başladığında gözükmemeisini sağlıyor
-
-*/
     }
 
     // Şişeye renk ekleme fonksiyonu
-    public void PushLiquid(Color color)
-    { 
+    // isLevelStart = true ise bu işlem oyun başında yapılıyor demektir (Zorla gizle)
+    public void PushLiquid(Color color, bool isLevelStart = false)
+    {
         if (liquidStack.Count < capacity)
         {
+            if (isLevelStart)
+            {
+                // LEVEL OLUŞTURMA ANI:
+                // Yeni gelen sıvıyı listeye ekle ama "Gizli" (false) olarak işaretle.
+                // En tepedeki kuralı UpdateVisuals'da işleyeceği için sorun yok.
+                revealedLayers.Add(false);
+            }
+            else
+            {
+                // OYUN ANI (Normal Dökme):
+                // 1. Yeni gelen sıvı her zaman görünürdür (En üstte olduğu için).
+                revealedLayers.Add(true);
+
+                // 2. Eğer altındaki sıvı (Count - 1) aynı renkse, onun da kilidini aç!
+                if (liquidStack.Count > 0 && liquidStack.Peek() == color)
+                {
+                    revealedLayers[liquidStack.Count - 1] = true;
+                }
+            }
+
+            // Stack'e rengi ekle
             liquidStack.Push(color);
             UpdateVisuals();
         }
@@ -72,13 +73,19 @@ UpdateVisuals(); // şişelerdeki renklerin oyun başladığında gözükmemeisi
         if (liquidStack.Count > 0)
         {
             Color color = liquidStack.Pop();
+            
+            // Sıvı gidince onun görünürlük bilgisini de listeden siliyoruz
+            if (revealedLayers.Count > 0)
+            {
+                revealedLayers.RemoveAt(revealedLayers.Count - 1);
+            }
+
             UpdateVisuals();
             return color;
         }
-        return Color.clear; // Boşsa şeffaf dön
+        return Color.clear;
     }
 
-    // En üstteki renge bakma (Çıkarmaz, sadece bakar)
     public Color PeekTopColor()
     {
         if (liquidStack.Count > 0)
@@ -89,64 +96,81 @@ UpdateVisuals(); // şişelerdeki renklerin oyun başladığında gözükmemeisi
     public int GetCount() { return liquidStack.Count; }
     public int GetCapacity() { return capacity; }
 
-    // Görselleri yığın verisine göre güncelleme
+    // Görselleri güncelleme
     private void UpdateVisuals()
     {
         Color[] currentColors = liquidStack.ToArray();
-        System.Array.Reverse(currentColors);
+        System.Array.Reverse(currentColors); // [Dip, ..., Tepe]
+
+        // Görünürlük listesini de ters çevirip dizi yapıyoruz ki indexler tutsun
+        bool[] currentRevealed = revealedLayers.ToArray();
+        // Stack yapısı olduğu için revealedLayers [Dip, ..., Tepe] sırasındadır,
+        // Ancak Stack.ToArray() LIFO (Tepe...Dip) verir, sonra Reverse ile (Dip...Tepe) yaptık.
+        // List zaten (Dip...Tepe) tuttuğu için Reverse etmemize GEREK YOKTUR, ama garanti olsun.
+        // DÜZELTME: List.Add ile sona ekliyoruz. Yani List[0] en alt, List[Son] en üst.
+        // currentColors[0] da en alt. Yani sıralama aynı.
 
         for (int i = 0; i < liquidRenderers.Length; i++)
         {
+            bool hasQM = (questionMarks != null && i < questionMarks.Length && questionMarks[i] != null);
+
+            // Önce temizlik
+            if (hasQM) questionMarks[i].SetActive(false);
+            liquidRenderers[i].gameObject.SetActive(false);
+
             if (i < currentColors.Length)
             {
-                liquidRenderers[i].color = currentColors[i];
-                liquidRenderers[i].gameObject.SetActive(true); // Görünür yap
-            }
-            else
-            {
-                liquidRenderers[i].gameObject.SetActive(false); // Boş kısımları gizle
+                liquidRenderers[i].gameObject.SetActive(true);
+
+                // GÖRÜNME KURALI:
+                // 1. Mod kapalıysa -> GÖSTER
+                // 2. Bu parça en tepedeyse -> GÖSTER (Her zaman ucunu görürüz)
+                // 3. 'revealedLayers' listesinde true ise -> GÖSTER
+                
+                bool isTop = (i == currentColors.Length - 1);
+                bool isRevealed = currentRevealed[i];
+
+                if (!isMysteryMode || isTop || isRevealed)
+                {
+                    // GÖRÜNÜR
+                    liquidRenderers[i].color = currentColors[i];
+                }
+                else
+                {
+                    // GİZLİ
+                    liquidRenderers[i].color = mysteryColor;
+                    if (hasQM) questionMarks[i].SetActive(true);
+                }
             }
         }
     }
-    
-    // Şişe çözüldü mü? (Ya tamamen boş olacak, ya da tamamen dolu ve tek renk olacak)
+
     public bool IsSolved()
     {
-        // 1. Durum: Şişe boşsa çözülmüş sayılır.
         if (liquidStack.Count == 0) return true;
-
-        // 2. Durum: Şişe dolu değilse (örn: 3 birim varsa) çözülmüş sayılamaz.
         if (liquidStack.Count < capacity) return false;
-
-        // 3. Durum: Şişe dolu, peki renkler aynı mı?
         Color topColor = liquidStack.Peek();
-        
         foreach (Color color in liquidStack)
         {
-            if (color != topColor) return false; // Farklı renk varsa olmamıştır
+            if (color != topColor) return false;
         }
-
-        return true; // Buraya kadar geldiyse hepsi aynı renktir.
+        return true;
     }
-    
-    // Şişenin içini tamamen boşaltır
+
     public void ClearBottle()
     {
-        liquidStack.Clear(); // Stack verisini sil
-        UpdateVisuals();     // Görüntüyü güncelle (Boş hale getir)
+        liquidStack.Clear();
+        revealedLayers.Clear(); // Listeyi de temizle
+        UpdateVisuals();
     }
-    public Vector3 GetOriginalScale()
-    {
-        return originalScale;
-    }
-    // Restart tuşuna basıldığında GameManager bu fonksiyonu çağıracak.
+
+    public Vector3 GetOriginalScale() { return originalScale; }
+
     public void ResetPosition()
     {
-        // Şişeyi başlangıçtaki konumuna ve açısına ışınla
         transform.position = originalPosition;
         transform.rotation = originalRotation;
-        
-        // Eğer seçili olduğu için büyümüşse, boyutunu normale döndür
         transform.localScale = originalScale;
     }
+    
 }

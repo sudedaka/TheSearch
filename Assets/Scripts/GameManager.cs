@@ -16,30 +16,34 @@ public class GameManager : MonoBehaviour
         GenerateLevel();
     }
 
-    void GenerateLevel()
+void GenerateLevel()
     {
-        // ... (Eski GenerateLevel kodun aynen kalsın, burayı değiştirmene gerek yok) ...
-        // Kodu kısaltmak için burayı yazmıyorum, eski halini koru.
-        // Sadece test için Start'ta GenerateLevel çağırdığından emin ol.
-        
-        // EĞER KODUN SİLİNDİYSE SÖYLE, GENERATE LEVEL'I TEKRAR ATAYIM.
-        // ŞİMDİLİK SADECE LEVEL OLUŞTURMA MANTIĞININ BURADA OLDUĞUNU VARSAYIYORUM.
         List<Color> levelLiquids = new List<Color>();
         int filledBottleCount = bottles.Length - 2;
+        
+        // Renkleri hazırla
         for (int i = 0; i < filledBottleCount; i++) {
             Color colorToUse = liquidColors[i % liquidColors.Length];
             for (int j = 0; j < 4; j++) levelLiquids.Add(colorToUse);
         }
-        for (int i = 0; i < levelLiquids.Count; i++) { // Basit Shuffle
+        
+        // Karıştır
+        for (int i = 0; i < levelLiquids.Count; i++) { 
             Color temp = levelLiquids[i];
             int r = Random.Range(i, levelLiquids.Count);
             levelLiquids[i] = levelLiquids[r];
             levelLiquids[r] = temp;
         }
+
         int idx = 0;
         for (int i = 0; i < filledBottleCount; i++) {
             for (int j = 0; j < 4; j++) {
-                bottles[i].PushLiquid(levelLiquids[idx]);
+                
+                // İŞTE KRİTİK NOKTA BURASI:
+                // İkinci parametreye 'true' gönderiyoruz.
+                // Bu sayede BottleController anlıyor ki: "Bu oyun başı dizilimidir, aynı renk gelse bile GİZLE."
+                bottles[i].PushLiquid(levelLiquids[idx], true); 
+                
                 idx++;
             }
         }
@@ -157,7 +161,13 @@ public class GameManager : MonoBehaviour
             target.PushLiquid(source.PopLiquid());
             targetSpace--;
             yield return new WaitForSeconds(0.1f); // Her birim sıvı için pıt-pıt bekleme süresi
+          
+            if (source.isMysteryMode) 
+            {
+                break; 
+            }
         }
+        
 
         // 6. Şişeyi Düzelt (Geri Dönüş Başlıyor)
         t = 0;
