@@ -14,6 +14,9 @@ namespace StarterAssets
 #endif
     public class ThirdPersonController : MonoBehaviour
     {
+        [Header("External Control")]
+        public bool AllowMovement = true;
+
         [Header("Player")]
         [Tooltip("Move speed of the character in m/s")]
         public float MoveSpeed = 2.0f;
@@ -213,6 +216,12 @@ namespace StarterAssets
 
         private void Move()
         {
+            if (!AllowMovement)
+            {
+                _animationBlend = 0f;
+                _animator.SetFloat(_animIDSpeed, 0f);
+                return;
+            }
             // set target speed based on move speed, sprint speed and if sprint is pressed
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
 
