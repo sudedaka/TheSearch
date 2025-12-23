@@ -69,10 +69,8 @@ public class PotionCollector : MonoBehaviour
         }
 
         Destroy(potion);
-
+        
          potionCount++;
-         Debug.Log("Potion Count: " + potionCount);
-
 
     if (potionCount % 2 == 0 && potionCount <= 6)
     {

@@ -790,6 +790,8 @@ MonoBehaviour:
   pressText: {fileID: 1219094206}
   collectedText: {fileID: 378557112}
   inventory: {fileID: 6897235}
+  potionCount: 0
+  miniGameIndex: 0
 --- !u!114 &6897235
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13614,6 +13616,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6162274999124268727, guid: e0e840a0fbef5824fb17064d6f78bfa6, type: 3}
+      propertyPath: rotateZ
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6162274999124268727, guid: e0e840a0fbef5824fb17064d6f78bfa6, type: 3}
+      propertyPath: floatSpeed
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6162274999124268727, guid: e0e840a0fbef5824fb17064d6f78bfa6, type: 3}
+      propertyPath: isFloating
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6162274999124268727, guid: e0e840a0fbef5824fb17064d6f78bfa6, type: 3}
+      propertyPath: floatHeight
+      value: 0.08
+      objectReference: {fileID: 0}
+    - target: {fileID: 6162274999124268727, guid: e0e840a0fbef5824fb17064d6f78bfa6, type: 3}
+      propertyPath: rotationSpeed
+      value: 85.67
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -15048,6 +15070,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2454909528473943368, guid: 8db164f48fcdae64180ebf0ce2bb5d92, type: 3}
+      propertyPath: floatSpeed
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2454909528473943368, guid: 8db164f48fcdae64180ebf0ce2bb5d92, type: 3}
+      propertyPath: floatHeight
+      value: 0.08
+      objectReference: {fileID: 0}
     - target: {fileID: 5791420369477035222, guid: 8db164f48fcdae64180ebf0ce2bb5d92, type: 3}
       propertyPath: m_LocalPosition.x
       value: 6.294
@@ -20498,6 +20528,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 6068898674178869563, guid: 1242a88922ac6d34da67517f4c97626b, type: 3}
+      propertyPath: floatSpeed
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6068898674178869563, guid: 1242a88922ac6d34da67517f4c97626b, type: 3}
+      propertyPath: floatHeight
+      value: 0.08
+      objectReference: {fileID: 0}
     - target: {fileID: 7215856734752065869, guid: 1242a88922ac6d34da67517f4c97626b, type: 3}
       propertyPath: m_Name
       value: RedPotion
@@ -43845,6 +43883,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 7033391531605794726, guid: 1a50416878db3f74bb3b6aba083ca60b, type: 3}
+      propertyPath: floatSpeed
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7033391531605794726, guid: 1a50416878db3f74bb3b6aba083ca60b, type: 3}
+      propertyPath: floatHeight
+      value: 0.08
+      objectReference: {fileID: 0}
     - target: {fileID: 8509018044341475585, guid: 1a50416878db3f74bb3b6aba083ca60b, type: 3}
       propertyPath: m_Name
       value: BlueVial (1)
@@ -50070,6 +50116,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 635507193966849464, guid: a610c52de611e244dbe9b6a800cf193b, type: 3}
+      propertyPath: floatSpeed
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 635507193966849464, guid: a610c52de611e244dbe9b6a800cf193b, type: 3}
+      propertyPath: floatHeight
+      value: 0.08
+      objectReference: {fileID: 0}
     - target: {fileID: 6965821067544458296, guid: a610c52de611e244dbe9b6a800cf193b, type: 3}
       propertyPath: m_Name
       value: GreenPotion
@@ -69788,6 +69842,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 7746409457258827167, guid: 67ebebe313b325b49a8c33c825bdabe5, type: 3}
+      propertyPath: floatSpeed
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746409457258827167, guid: 67ebebe313b325b49a8c33c825bdabe5, type: 3}
+      propertyPath: floatHeight
+      value: 0.08
+      objectReference: {fileID: 0}
     - target: {fileID: 8398601021662225049, guid: 67ebebe313b325b49a8c33c825bdabe5, type: 3}
       propertyPath: m_Name
       value: BluePotion
