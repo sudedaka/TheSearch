@@ -13766,7 +13766,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6162274999124268727, guid: e0e840a0fbef5824fb17064d6f78bfa6, type: 3}
       propertyPath: floatHeight
-      value: 0.08
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 6162274999124268727, guid: e0e840a0fbef5824fb17064d6f78bfa6, type: 3}
       propertyPath: rotationSpeed
@@ -15212,7 +15212,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2454909528473943368, guid: 8db164f48fcdae64180ebf0ce2bb5d92, type: 3}
       propertyPath: floatHeight
-      value: 0.08
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 5791420369477035222, guid: 8db164f48fcdae64180ebf0ce2bb5d92, type: 3}
       propertyPath: m_LocalPosition.x
@@ -20670,7 +20670,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6068898674178869563, guid: 1242a88922ac6d34da67517f4c97626b, type: 3}
       propertyPath: floatHeight
-      value: 0.08
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 7215856734752065869, guid: 1242a88922ac6d34da67517f4c97626b, type: 3}
       propertyPath: m_Name
@@ -44025,7 +44025,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7033391531605794726, guid: 1a50416878db3f74bb3b6aba083ca60b, type: 3}
       propertyPath: floatHeight
-      value: 0.08
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 8509018044341475585, guid: 1a50416878db3f74bb3b6aba083ca60b, type: 3}
       propertyPath: m_Name
@@ -50258,7 +50258,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 635507193966849464, guid: a610c52de611e244dbe9b6a800cf193b, type: 3}
       propertyPath: floatHeight
-      value: 0.08
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 6965821067544458296, guid: a610c52de611e244dbe9b6a800cf193b, type: 3}
       propertyPath: m_Name
@@ -69984,7 +69984,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7746409457258827167, guid: 67ebebe313b325b49a8c33c825bdabe5, type: 3}
       propertyPath: floatHeight
-      value: 0.08
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 8398601021662225049, guid: 67ebebe313b325b49a8c33c825bdabe5, type: 3}
       propertyPath: m_Name
