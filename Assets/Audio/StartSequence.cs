@@ -5,23 +5,15 @@ using TMPro;
 
 public class StartSequence : MonoBehaviour
 {
-    [Header("Audio Clips")]
-    public AudioClip answeringMachineClip;
+    [Header("Audio")]
     public AudioClip bethVoiceClip;
-
     public AudioSource audioSource;
-
-    [Header("Player")]
-    public ThirdPersonController movementController;
 
     [Header("Subtitles")]
     public TMP_Text subtitleText;
 
     void Start()
     {
-        if (movementController != null)
-            movementController.AllowMovement = false;
-
         if (subtitleText != null)
             subtitleText.alpha = 0f;
 
@@ -30,30 +22,16 @@ public class StartSequence : MonoBehaviour
 
     IEnumerator PlaySequence()
     {
-        // 1️⃣ ANSWERING MACHINE
-        ShowSubtitle("<i>Hello. No one is available to take your call.\nPlease leave your message after the tone.</i>");
-        audioSource.PlayOneShot(answeringMachineClip);
-        yield return new WaitForSeconds(answeringMachineClip.length);
+     
+        yield return new WaitForSeconds(2.0f);
 
-        HideSubtitle();
-        yield return new WaitForSeconds(0.4f);
-
-        // 2️⃣ BETH – TEK CÜMLE
-        ShowSubtitle("I can't reach my father, I hope he's home.");
+   
+        ShowSubtitle("Everything is as he left it...");
         audioSource.PlayOneShot(bethVoiceClip);
+
         yield return new WaitForSeconds(bethVoiceClip.length);
 
         HideSubtitle();
-
-        if (movementController != null)
-            movementController.AllowMovement = true;
-    }
-
-
-    IEnumerator ShowLine(string line)
-    {
-        ShowSubtitle(line);
-        yield return new WaitForSeconds(1.2f);
     }
 
     void ShowSubtitle(string text)
