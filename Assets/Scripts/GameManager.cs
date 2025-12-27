@@ -2,21 +2,46 @@ using UnityEngine;
 using System.Collections; 
 using System.Collections.Generic;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems; // UI Tıklamaları için gerekli
 
 public class GameManager : MonoBehaviour
 {
+    [Header("Kamera Ayarı")]
+    public Camera miniGameCamera; // Inspector'dan Mini Game kamerasını sürükle
+
     public BottleController[] bottles;
     public Color[] liquidColors;
 
     private BottleController selectedBottle;
-    private bool isAnimating = false; // Şu an animasyon oynuyor mu?
+    private bool isAnimating = false;
 
     void Start()
     {
+          Cursor.lockState = CursorLockMode.None; 
+        Cursor.visible = true;
+        // 1. Kamera Güvenliği
+        if (miniGameCamera == null)
+        {
+            miniGameCamera = Camera.main; 
+        }
+
+        // 2. EventSystem Çakışmasını Önle
+        // Ana sahnedeki EventSystem'i bulup geçici olarak susturuyoruz.
+        EventSystem[] systems = FindObjectsByType<EventSystem>(FindObjectsSortMode.None);
+        foreach (var sys in systems)
+        {
+            // Eğer bu EventSystem benim sahnemde değilse (yani Ana Sahne'deyse) kapat.
+            if (sys.gameObject.scene.name != gameObject.scene.name)
+            {
+                sys.gameObject.SetActive(false);
+            }
+        }
+
         GenerateLevel();
     }
 
-void GenerateLevel()
+    void GenerateLevel()
     {
         List<Color> levelLiquids = new List<Color>();
         int filledBottleCount = bottles.Length - 2;
@@ -35,15 +60,13 @@ void GenerateLevel()
             levelLiquids[r] = temp;
         }
 
+        // Şişelere doldur
         int idx = 0;
         for (int i = 0; i < filledBottleCount; i++) {
             for (int j = 0; j < 4; j++) {
-                
-                // İŞTE KRİTİK NOKTA BURASI:
-                // İkinci parametreye 'true' gönderiyoruz.
-                // Bu sayede BottleController anlıyor ki: "Bu oyun başı dizilimidir, aynı renk gelse bile GİZLE."
+                // Not: Burada Level1/Level3 mantığına göre true/false parametreni koru.
+                // Ben varsayılan olarak true (gizle) gönderiyorum.
                 bottles[i].PushLiquid(levelLiquids[idx], true); 
-                
                 idx++;
             }
         }
@@ -51,12 +74,12 @@ void GenerateLevel()
 
     void Update()
     {
-        // Eğer animasyon oynuyorsa tıklamaya izin verme!
         if (isAnimating) return;
 
         if (Input.GetMouseButtonDown(0))
         {
-            Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            // Mini Game kamerasına göre tıklama hesabı
+            Vector2 mousePos = miniGameCamera.ScreenToWorldPoint(Input.mousePosition);
             RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero);
 
             if (hit.collider != null)
@@ -77,7 +100,6 @@ void GenerateLevel()
             if (clickedBottle.GetCount() > 0)
             {
                 selectedBottle = clickedBottle;
-                // Hafif büyüme efekti
                 selectedBottle.transform.localScale = selectedBottle.GetOriginalScale() * 1.1f;
             }
         }
@@ -89,14 +111,12 @@ void GenerateLevel()
             }
             else
             {
-                // Dökme kurallarını kontrol et
                 Color sourceColor = selectedBottle.PeekTopColor();
                 int targetSpace = clickedBottle.GetCapacity() - clickedBottle.GetCount();
 
                 if (targetSpace > 0 && 
                    (clickedBottle.GetCount() == 0 || clickedBottle.PeekTopColor() == sourceColor))
                 {
-                    // ŞARTLAR UYUYOR -> ANIMASYONU BAŞLAT
                     StartCoroutine(PourSequence(selectedBottle, clickedBottle));
                 }
                 else
@@ -108,94 +128,86 @@ void GenerateLevel()
         }
     }
 
-    // dökme animsyonu
+    // --- KRİTİK DÜZELTME YAPILAN YER ---
     IEnumerator PourSequence(BottleController source, BottleController target)
     {
-        isAnimating = true; // kullanıcaın animasyon ilerlerken başka yere tıklamasını engellemek için
+        isAnimating = true; 
         
         SortingGroup sourceSort = source.GetComponent<SortingGroup>();
-       
-        sourceSort.sortingOrder = 20;
+        if (sourceSort != null) sourceSort.sortingOrder = 20;
 
-        // 1. Pozisyonları Kaydet
         Vector3 originalPos = source.transform.position;
         Quaternion originalRot = source.transform.rotation;
 
-        // 2. Hedef Pozisyonu Hesapla (Hedef şişenin biraz üstü ve yanı)
-        // Hangi taraftan dökecek? Solundaysa soldan, sağındaysa sağdan.
         float direction = (target.transform.position.x > source.transform.position.x) ? -1 : 1; 
-        Vector3 pourPos = target.transform.position + new Vector3(direction * 0.5f, 1.5f, 0); // 1.5 birim yukarı, 0.5 yana
+        Vector3 pourPos = target.transform.position + new Vector3(direction * 0.5f, 1.5f, 0); 
         
-        // 3. Şişeyi Hedefe Götür (Hareket Animasyonu)
         float moveSpeed = 10f;
+        
+        // 1. Git (Unscaled Time)
         while (Vector3.Distance(source.transform.position, pourPos) > 0.1f)
         {
-            source.transform.position = Vector3.MoveTowards(source.transform.position, pourPos, moveSpeed * Time.deltaTime);
-            yield return null; // Bir sonraki kareyi bekle
+            source.transform.position = Vector3.MoveTowards(source.transform.position, pourPos, moveSpeed * Time.unscaledDeltaTime);
+            yield return null; 
         }
 
-        // 4. Şişeyi Eğ (Rotate Animasyonu)
-        float rotateAngle = (direction == -1) ? -45f : 45f; // Sağa veya sola eğ
+        // 2. Dön (Unscaled Time)
+        float rotateAngle = (direction == -1) ? -45f : 45f; 
         Quaternion targetRotation = Quaternion.Euler(0, 0, rotateAngle);
         float rotateSpeed = 5f;
         
         float t = 0;
         while (t < 1)
         {
-            t += Time.deltaTime * rotateSpeed;
+            t += Time.unscaledDeltaTime * rotateSpeed;
             source.transform.rotation = Quaternion.Slerp(originalRot, targetRotation, t);
             yield return null;
         }
 
-        // 5. SIVIYI AKTAR (Logic Kısmı)
-        // Animasyon bitince sıvıyı gerçekten döküyoruz
-        yield return new WaitForSeconds(0.2f); // Dökülüyormuş gibi azıcık bekle
+        // 3. Bekle (Realtime)
+        yield return new WaitForSecondsRealtime(0.2f); 
 
+        // 4. Dök (Realtime Beklemeli)
         Color colorGroup = source.PeekTopColor();
         int targetSpace = target.GetCapacity() - target.GetCount();
 
-        while (source.GetCount() > 0 && 
-               source.PeekTopColor() == colorGroup && 
-               targetSpace > 0)
+        while (source.GetCount() > 0 && source.PeekTopColor() == colorGroup && targetSpace > 0)
         {
             target.PushLiquid(source.PopLiquid());
             targetSpace--;
-            yield return new WaitForSeconds(0.1f); // Her birim sıvı için pıt-pıt bekleme süresi
+            
+            yield return new WaitForSecondsRealtime(0.1f); 
           
-            if (source.isMysteryMode) 
-            {
-                break; 
-            }
+            if (source.isMysteryMode) break; 
         }
-        
 
-        // 6. Şişeyi Düzelt (Geri Dönüş Başlıyor)
+        // 5. Geri Dön (Unscaled Time)
         t = 0;
         Quaternion currentRot = source.transform.rotation;
         while (t < 1)
         {
-            t += Time.deltaTime * rotateSpeed;
+            t += Time.unscaledDeltaTime * rotateSpeed;
             source.transform.rotation = Quaternion.Slerp(currentRot, originalRot, t);
             yield return null;
         }
 
-        // 7. Şişeyi Yerine Götür
+        // 6. Yerine Git (Unscaled Time)
         while (Vector3.Distance(source.transform.position, originalPos) > 0.1f)
         {
-            source.transform.position = Vector3.MoveTowards(source.transform.position, originalPos, moveSpeed * Time.deltaTime);
+            source.transform.position = Vector3.MoveTowards(source.transform.position, originalPos, moveSpeed * Time.unscaledDeltaTime);
             yield return null;
         }
 
-        // Her şeyin tam oturduğundan emin ol
         source.transform.position = originalPos;
         source.transform.rotation = originalRot;
-        
-        sourceSort.sortingOrder = 0;
+        if (sourceSort != null) sourceSort.sortingOrder = 0;
+
+        Debug.Log("Animasyon Bitti. Kontrol yapılıyor...");
 
         CheckWinCondition();
         DeselectBottle();
         
-        isAnimating = false; // Tıklamayı tekrar aç
+        isAnimating = false; 
     }
 
     void DeselectBottle()
@@ -207,43 +219,77 @@ void GenerateLevel()
         }
     }
 
-   public void RestartGame()
+    public void RestartGame()
     {
-        // 1. Devam eden tüm animasyonları (dökme işlemini) anında durdur
         StopAllCoroutines();
-        isAnimating = false; // Tıklama kilidini aç
+        isAnimating = false; 
 
-        // 2. Eğer o an seçili (büyümüş) bir şişe varsa seçimini kaldır
         if (selectedBottle != null)
         {
             selectedBottle.transform.localScale = selectedBottle.GetOriginalScale();
             selectedBottle = null;
         }
 
-        // 3. Bütün şişeleri tek tek gez
         foreach (BottleController bottle in bottles)
         {
-            bottle.ClearBottle();   // İçindeki sıvıyı boşalt
-            bottle.ResetPosition(); // KONUMUNU VE DÖNMESİNİ SIFIRLA (Yeni Eklediğimiz)
+            bottle.ClearBottle();   
+            bottle.ResetPosition(); 
         }
 
-        // 4. Leveli baştan oluştur
         GenerateLevel();
-        
-        Debug.Log("Oyun ve Pozisyonlar Sıfırlandı!");
+        Debug.Log("Oyun Yeniden Başlatıldı!");
     }
 
+    // --- DETAYLI DEBUG VERSİYONU ---
     void CheckWinCondition()
     {
         bool allSolved = true;
+        
         foreach (BottleController bottle in bottles)
         {
             if (!bottle.IsSolved())
             {
                 allSolved = false;
-                break;
+                
+                // Neden bitmediğini konsola yaz
+                // Debug.LogWarning($"BİTMEDİ: {bottle.name} | Doluluk: {bottle.GetCount()}/{bottle.GetCapacity()}");
+                
+                break; 
             }
         }
-        if (allSolved) Debug.Log("TEBRİKLER! OYUN BİTTİ!");
+
+        if (allSolved) 
+        {
+            Debug.Log("TEBRİKLER! TÜM ŞİŞELER TAMAMLANDI! Ana oyuna dönülüyor...");
+            
+            // Realtime bekleme için Invoke yerine Coroutine kullanabiliriz ama 
+            // Invoke da TimeScale=0 iken çalışmayabilir!
+            // En garantisi Coroutine başlatmaktır.
+            StartCoroutine(WaitAndReturn());
+        }
+    }
+    
+    // Kazanma sonrası bekleme ve dönüş
+    IEnumerator WaitAndReturn()
+    {
+        yield return new WaitForSecondsRealtime(2f); // 2 saniye bekle
+        ReturnToMainGame();
+    }
+
+void ReturnToMainGame()
+    {
+        // 1. Zamanı tekrar akıt (Ana oyun canlansın)
+        Time.timeScale = 1;
+
+        // --- HATA BURADAYDI ---
+        // Eski: SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
+        // Bu kod yanlışlıkla Ana Sahneyi hedef alıyordu çünkü aktif olan oydu.
+
+        // --- DOĞRUSU ---
+        // gameObject.scene -> "Bu scriptin bağlı olduğu sahne" demektir.
+        // Yani direkt olarak "WaterSortMiniGame" sahnesini hedef alır.
+        SceneManager.UnloadSceneAsync(gameObject.scene);
+        
+        Debug.Log("Mini Game Başarıyla Yok Edildi.");
     }
 }

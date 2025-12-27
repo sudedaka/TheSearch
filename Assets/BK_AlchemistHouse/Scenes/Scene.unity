@@ -789,6 +789,10 @@ MonoBehaviour:
   collectKey: 112
   pressText: {fileID: 1219094206}
   collectedText: {fileID: 378557112}
+  uiListToHide:
+  - {fileID: 2011171753}
+  - {fileID: 351375035}
+  - {fileID: 487439168}
   inventory: {fileID: 6897235}
   potionCount: 0
   miniGameIndex: 0

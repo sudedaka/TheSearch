@@ -1,66 +1,103 @@
 using UnityEngine;
 using TMPro;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 public class PotionCollector : MonoBehaviour
 {
     [Header("Toplama Ayarları")]
-    public KeyCode collectKey = KeyCode.P;   // Toplama tuşu
+    public KeyCode collectKey = KeyCode.P;
 
     [Header("UI Referansları")]
-    public TextMeshProUGUI pressText;        // "Press P" yazısı
-    public TextMeshProUGUI collectedText;    // "Potion Collected!" yazısı
+    public TextMeshProUGUI pressText;
+    public TextMeshProUGUI collectedText;
+    
+    // --- DEĞİŞİKLİK BURADA ---
+    // Artık tek bir obje değil, bir obje LİSTESİ tutuyoruz.
+    // Köşeli parantez [] dizi (array) demektir.
+    [Header("Gizlenecek UI Listesi")]
+    public GameObject[] uiListToHide; 
 
     [Header("Envanter Referansı")]
     public InventoryController inventory;
 
-    private GameObject potionInRange;        // Yakındaki potion referansı
+    private GameObject potionInRange;
 
-    public int potionCount = 0;     // Toplanan toplam potion
-    public int miniGameIndex = 0;   // 2->1, 4->2, 6->3
+    public static int savedPotionCount = 0; 
+    public int potionCount = 0;
+    public int miniGameIndex = 0;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void ResetStatics()
+    {
+        savedPotionCount = 0;
+    }
+
+    void OnEnable()
+    {
+        SceneManager.sceneUnloaded += OnSceneUnloaded;
+    }
+
+    void OnDisable()
+    {
+        SceneManager.sceneUnloaded -= OnSceneUnloaded;
+    }
+
+    void OnSceneUnloaded(Scene current)
+    {
+        // --- DEĞİŞİKLİK: DÖNGÜ İLE AÇMA ---
+        // Listenin içindeki her bir objeyi (ui) tek tek gezip açıyoruz.
+        if (uiListToHide != null)
+        {
+            foreach (GameObject ui in uiListToHide)
+            {
+                if (ui != null) ui.SetActive(true);
+            }
+            Debug.Log("Ana Sahne UI Listesi Geri Geldi.");
+        }
+    }
 
     void Start()
     {
+        // Eğer oyun ilk açılışsa savedPotionCount'u al
+        if (potionCount == 0 && savedPotionCount > 0)
+             potionCount = savedPotionCount;
+
         if (pressText != null) pressText.gameObject.SetActive(false);
         if (collectedText != null) collectedText.gameObject.SetActive(false);
     }
 
     void Update()
     {
-        // Sadece yakınında potion varsa ve tuşa basılmışsa
+        if (Time.timeScale == 0) return;
+
         if (potionInRange != null && Input.GetKeyDown(collectKey))
         {
             CollectPotion(potionInRange);
         }
     }
 
-    // 🔹 Karakter potion’un trigger alanına girince
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Potion"))
         {
             potionInRange = other.gameObject;
-            if (pressText != null)
-                pressText.gameObject.SetActive(true);
+            if (pressText != null) pressText.gameObject.SetActive(true);
         }
     }
 
-    // 🔹 Karakter trigger alanından çıkınca
     void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("Potion"))
         {
             potionInRange = null;
-            if (pressText != null)
-                pressText.gameObject.SetActive(false);
+            if (pressText != null) pressText.gameObject.SetActive(false);
         }
     }
 
     void CollectPotion(GameObject potion)
     {
         if (potion == null) return;
-
-        Debug.Log("Potion collected!");
 
         PotionPickup pickup = potion.GetComponent<PotionPickup>();
         if (pickup != null && pickup.potionIcon != null && inventory != null)
@@ -70,19 +107,40 @@ public class PotionCollector : MonoBehaviour
 
         Destroy(potion);
 
-         potionCount++;
-         Debug.Log("Potion Count: " + potionCount);
+        savedPotionCount++;       
+        potionCount = savedPotionCount; 
+        
+        Debug.Log("Potion Count: " + potionCount);
 
+        if (potionCount % 2 == 0 && potionCount <= 6)
+        {
+            miniGameIndex = potionCount / 2;
+            
+            string sceneToLoad = "";
 
-    if (potionCount % 2 == 0 && potionCount <= 6)
-    {
-        miniGameIndex = potionCount / 2;
-        Debug.Log("MiniGameIndex: " + miniGameIndex);
-    }
+            if (miniGameIndex == 1) sceneToLoad = "WaterSortMiniGame"; 
+            else if (miniGameIndex == 2) sceneToLoad = "WaterSortMiniGameLevel2"; 
+            else if (miniGameIndex == 3) sceneToLoad = "WaterSortMiniGameLevel3";           
+
+            if (sceneToLoad != "")
+            {
+                // --- DEĞİŞİKLİK: DÖNGÜ İLE GİZLEME ---
+                // Listede ne varsa hepsini kapat
+                if (uiListToHide != null) 
+                {
+                    foreach (GameObject ui in uiListToHide)
+                    {
+                        if (ui != null) ui.SetActive(false);
+                    }
+                }
+
+                SceneManager.LoadSceneAsync(sceneToLoad, LoadSceneMode.Additive);
+                Time.timeScale = 0;
+            }
+        }
 
         if (pressText != null) pressText.gameObject.SetActive(false);
-        if (collectedText != null)
-            StartCoroutine(ShowCollectedMessage());
+        if (collectedText != null) StartCoroutine(ShowCollectedMessage());
     }
 
     IEnumerator ShowCollectedMessage()
