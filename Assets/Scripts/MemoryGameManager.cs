@@ -7,17 +7,21 @@ using UnityEngine.EventSystems;
 public class MemoryGameManager : MonoBehaviour
 {
     [Header("Ayarlar")]
-    public MemoryCard cardPrefab; // Kart kalıbı
+    public MemoryCard cardPrefab; // Kart kalıbı (Prefab)
     public Sprite[] cardImages;   // Eşleşecek resimlerin listesi
-    public Camera gameCamera;     // Tıklama için kamera
+    public Camera gameCamera;     // Tıklama için kamera (Inspector'dan ata!)
     
     [Header("Grid Ayarları")]
-    public int rows = 2;    // Satır
-    public int cols = 3;    // Sütun (Toplam kart = rows * cols)
-    public float spaceX = 2.5f; // Kartlar arası boşluk X
-    public float spaceY = 3.0f; // Kartlar arası boşluk Y
+    public int rows = 2;    // Satır Sayısı
+    public int cols = 3;    // Sütun Sayısı
+    public float spaceX = 2.5f; // Kartlar arası yatay boşluk
+    public float spaceY = 3.0f; // Kartlar arası dikey boşluk
 
-    // Oyun Mantığı Değişkenleri
+    [Header("Sonraki Level Ayarı")]
+   
+    public string nextLevelName = ""; 
+
+   
     [HideInInspector] public bool canClick = true;
     private MemoryCard firstCard;
     private MemoryCard secondCard;
@@ -26,10 +30,11 @@ public class MemoryGameManager : MonoBehaviour
 
     void Start()
     {
-        // 1. EventSystem Çakışmasını Önle (WaterSort'taki gibi)
+        // 1. EventSystem Çakışmasını önlemek
         EventSystem[] systems = FindObjectsByType<EventSystem>(FindObjectsSortMode.None);
         foreach (var sys in systems)
         {
+           
             if (sys.gameObject.scene.name != gameObject.scene.name)
                 sys.gameObject.SetActive(false);
         }
@@ -41,13 +46,12 @@ public class MemoryGameManager : MonoBehaviour
 
     void GenerateGrid()
     {
-        // Toplam kaç çift olacak?
         int totalCards = rows * cols;
         totalMatches = totalCards / 2;
 
         if (totalCards % 2 != 0)
         {
-            Debug.LogError("Kart sayısı çift olmalı! (Rows x Cols çift sayı yap)");
+            Debug.LogError("HATA: Kart sayısı çift olmalı! (Rows x Cols çarpımı çift sayı yap)");
             return;
         }
 
@@ -57,15 +61,12 @@ public class MemoryGameManager : MonoBehaviour
 
         for (int i = 0; i < totalMatches; i++)
         {
-            // Eğer yeterli resim yoksa başa dön
             Sprite img = cardImages[i % cardImages.Length];
-            
-            // Çift ekle (2 tane aynı resim)
             deck.Add(img); ids.Add(i);
             deck.Add(img); ids.Add(i);
         }
 
-        // Listeyi Karıştır (Shuffle)
+        // Listeyi Karıştır 
         for (int i = 0; i < deck.Count; i++)
         {
             Sprite tempS = deck[i]; int tempI = ids[i];
@@ -75,7 +76,7 @@ public class MemoryGameManager : MonoBehaviour
             deck[r] = tempS; ids[r] = tempI;
         }
 
-        // Kartları Sahneye Diz (5000, 5000 merkezli)
+        // Kartları Sahneye Diz
         Vector2 startPos = new Vector2(5000 - (cols-1) * spaceX / 2, 5000 + (rows-1) * spaceY / 2);
 
         int index = 0;
@@ -84,9 +85,13 @@ public class MemoryGameManager : MonoBehaviour
             for (int c = 0; c < cols; c++)
             {
                 Vector3 pos = new Vector3(startPos.x + c * spaceX, startPos.y - r * spaceY, 0);
+                
                 MemoryCard card = Instantiate(cardPrefab, pos, Quaternion.identity);
                 
-                // Kartı ayarla
+               
+                card.transform.SetParent(this.transform); 
+                // --------------------------------------------------------
+
                 card.Setup(ids[index], deck[index], this);
                 index++;
             }
@@ -97,26 +102,22 @@ public class MemoryGameManager : MonoBehaviour
     {
         if (firstCard == null)
         {
-            // İlk kart seçildi
             firstCard = card;
         }
         else
         {
-            // İkinci kart seçildi
             secondCard = card;
-            canClick = false; // Başka tıklamayı engelle
+            canClick = false; 
             StartCoroutine(CheckMatch());
         }
     }
 
     IEnumerator CheckMatch()
     {
-        // Oyuncu 2. kartı görsün diye azıcık bekle
         yield return new WaitForSecondsRealtime(1.0f);
 
         if (firstCard.cardID == secondCard.cardID)
         {
-            // EŞLEŞTİ!
             firstCard.Match();
             secondCard.Match();
             matchesFound++;
@@ -124,25 +125,50 @@ public class MemoryGameManager : MonoBehaviour
             if (matchesFound >= totalMatches)
             {
                 Debug.Log("OYUN BİTTİ! KAZANDIN!");
-                Invoke("ReturnToMainGame", 1.5f);
+                
+                
+                StartCoroutine(WaitAndFinish());
             }
         }
         else
         {
-            // EŞLEŞMEDİ :(
             firstCard.FlipClose();
             secondCard.FlipClose();
         }
 
-        // Seçimleri sıfırla
         firstCard = null;
         secondCard = null;
         canClick = true;
     }
 
+   
+    IEnumerator WaitAndFinish()
+    {
+        yield return new WaitForSecondsRealtime(1.5f); 
+        ReturnToMainGame();
+    }
+
     void ReturnToMainGame()
     {
-        Time.timeScale = 1;
+        
+        if (!string.IsNullOrEmpty(nextLevelName))
+        {
+            Debug.Log("Zincirleme Geçiş: " + nextLevelName);
+            
+            // PotionCollectora haber ver
+            PotionCollector.nextSceneToLoad = nextLevelName;
+            
+            // Zaman hala duruk kalsın(za warudo)
+            Time.timeScale = 0; 
+        }
+        else
+        {
+            // Sırada level yoksa ana oyuna dön
+            Debug.Log("Tüm Mini Gameler Bitti -> Ana Sahne");
+            Time.timeScale = 1;
+        }
+
+        // Bu sahneyi  yok et
         SceneManager.UnloadSceneAsync(gameObject.scene);
     }
 }

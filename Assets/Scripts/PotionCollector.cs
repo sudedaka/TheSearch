@@ -12,9 +12,6 @@ public class PotionCollector : MonoBehaviour
     public TextMeshProUGUI pressText;
     public TextMeshProUGUI collectedText;
     
-    // --- DEĞİŞİKLİK BURADA ---
-    // Artık tek bir obje değil, bir obje LİSTESİ tutuyoruz.
-    // Köşeli parantez [] dizi (array) demektir.
     [Header("Gizlenecek UI Listesi")]
     public GameObject[] uiListToHide; 
 
@@ -27,10 +24,14 @@ public class PotionCollector : MonoBehaviour
     public int potionCount = 0;
     public int miniGameIndex = 0;
 
+    // --- YENİ: Sırada yüklenecek sahnenin ismini tutan değişken ---
+    public static string nextSceneToLoad = "";
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void ResetStatics()
     {
         savedPotionCount = 0;
+        nextSceneToLoad = "";
     }
 
     void OnEnable()
@@ -45,8 +46,25 @@ public class PotionCollector : MonoBehaviour
 
     void OnSceneUnloaded(Scene current)
     {
-        // --- DEĞİŞİKLİK: DÖNGÜ İLE AÇMA ---
-        // Listenin içindeki her bir objeyi (ui) tek tek gezip açıyoruz.
+        // --- KRİTİK GÜNCELLEME ---
+        // Eğer sırada yüklenecek bir sahne varsa (nextSceneToLoad doluysa),
+        // Ana Menü UI'ını açma, hemen o sahneyi yükle.
+        if (!string.IsNullOrEmpty(nextSceneToLoad))
+        {
+            Debug.Log("Zincirleme Geçiş Yapılıyor: " + nextSceneToLoad);
+            
+            // Yeni sahneyi ekle
+            SceneManager.LoadSceneAsync(nextSceneToLoad, LoadSceneMode.Additive);
+            
+            // Zamanın duruk kalmasını garantiye al
+            Time.timeScale = 0;
+
+            // Değişkeni sıfırla ki bir sonraki sefer karışmasın
+            nextSceneToLoad = ""; 
+            return; 
+        }
+
+        // Eğer sırada level yoksa, demek ki gerçekten ana oyuna döndük. UI'ları aç.
         if (uiListToHide != null)
         {
             foreach (GameObject ui in uiListToHide)
@@ -59,7 +77,6 @@ public class PotionCollector : MonoBehaviour
 
     void Start()
     {
-        // Eğer oyun ilk açılışsa savedPotionCount'u al
         if (potionCount == 0 && savedPotionCount > 0)
              potionCount = savedPotionCount;
 
@@ -76,6 +93,40 @@ public class PotionCollector : MonoBehaviour
             CollectPotion(potionInRange);
         }
     }
+
+/*void Update()
+    {
+        if (Time.timeScale == 0) return;
+
+     
+        if (Input.GetKeyDown(KeyCode.O))
+        {
+            Debug.Log(" HİLE AKTİF: Tarot  Level 1 Açılıyor...");
+
+            // UI'ları gizle
+            if (uiListToHide != null) 
+            {
+                foreach (GameObject ui in uiListToHide)
+                {
+                    if (ui != null) ui.SetActive(false);
+                }
+            }
+
+            SceneManager.LoadSceneAsync("TarotMiniGame", LoadSceneMode.Additive);
+            
+            Time.timeScale = 0;
+            return; 
+        }
+        // -----------------------------
+
+        if (potionInRange != null && Input.GetKeyDown(collectKey))
+        {
+            CollectPotion(potionInRange);
+        }
+    }*/
+
+
+
 
     void OnTriggerEnter(Collider other)
     {
@@ -124,8 +175,6 @@ public class PotionCollector : MonoBehaviour
 
             if (sceneToLoad != "")
             {
-                // --- DEĞİŞİKLİK: DÖNGÜ İLE GİZLEME ---
-                // Listede ne varsa hepsini kapat
                 if (uiListToHide != null) 
                 {
                     foreach (GameObject ui in uiListToHide)

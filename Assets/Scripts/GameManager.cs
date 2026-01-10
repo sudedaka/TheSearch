@@ -3,12 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
-using UnityEngine.EventSystems; // UI Tıklamaları için gerekli
+using UnityEngine.EventSystems;
 
 public class GameManager : MonoBehaviour
 {
     [Header("Kamera Ayarı")]
-    public Camera miniGameCamera; // Inspector'dan Mini Game kamerasını sürükle
+    public Camera miniGameCamera;
+
+    [Header("Sonraki Level Ayarı")]
+    public string nextLevelName = ""; // Inspector'dan sıradaki sahnenin adını yaz (Örn: TarotLevel1)
 
     public BottleController[] bottles;
     public Color[] liquidColors;
@@ -18,8 +21,9 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-          Cursor.lockState = CursorLockMode.None; 
+        Cursor.lockState = CursorLockMode.None; 
         Cursor.visible = true;
+
         // 1. Kamera Güvenliği
         if (miniGameCamera == null)
         {
@@ -27,11 +31,9 @@ public class GameManager : MonoBehaviour
         }
 
         // 2. EventSystem Çakışmasını Önle
-        // Ana sahnedeki EventSystem'i bulup geçici olarak susturuyoruz.
         EventSystem[] systems = FindObjectsByType<EventSystem>(FindObjectsSortMode.None);
         foreach (var sys in systems)
         {
-            // Eğer bu EventSystem benim sahnemde değilse (yani Ana Sahne'deyse) kapat.
             if (sys.gameObject.scene.name != gameObject.scene.name)
             {
                 sys.gameObject.SetActive(false);
@@ -64,8 +66,6 @@ public class GameManager : MonoBehaviour
         int idx = 0;
         for (int i = 0; i < filledBottleCount; i++) {
             for (int j = 0; j < 4; j++) {
-                // Not: Burada Level1/Level3 mantığına göre true/false parametreni koru.
-                // Ben varsayılan olarak true (gizle) gönderiyorum.
                 bottles[i].PushLiquid(levelLiquids[idx], true); 
                 idx++;
             }
@@ -78,7 +78,6 @@ public class GameManager : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
-            // Mini Game kamerasına göre tıklama hesabı
             Vector2 mousePos = miniGameCamera.ScreenToWorldPoint(Input.mousePosition);
             RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero);
 
@@ -128,7 +127,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // --- KRİTİK DÜZELTME YAPILAN YER ---
     IEnumerator PourSequence(BottleController source, BottleController target)
     {
         isAnimating = true; 
@@ -144,14 +142,14 @@ public class GameManager : MonoBehaviour
         
         float moveSpeed = 10f;
         
-        // 1. Git (Unscaled Time)
+        // 1. Git
         while (Vector3.Distance(source.transform.position, pourPos) > 0.1f)
         {
             source.transform.position = Vector3.MoveTowards(source.transform.position, pourPos, moveSpeed * Time.unscaledDeltaTime);
             yield return null; 
         }
 
-        // 2. Dön (Unscaled Time)
+        // 2. Dön
         float rotateAngle = (direction == -1) ? -45f : 45f; 
         Quaternion targetRotation = Quaternion.Euler(0, 0, rotateAngle);
         float rotateSpeed = 5f;
@@ -164,10 +162,10 @@ public class GameManager : MonoBehaviour
             yield return null;
         }
 
-        // 3. Bekle (Realtime)
+        // 3. Bekle
         yield return new WaitForSecondsRealtime(0.2f); 
 
-        // 4. Dök (Realtime Beklemeli)
+        // 4. Dök
         Color colorGroup = source.PeekTopColor();
         int targetSpace = target.GetCapacity() - target.GetCount();
 
@@ -181,7 +179,7 @@ public class GameManager : MonoBehaviour
             if (source.isMysteryMode) break; 
         }
 
-        // 5. Geri Dön (Unscaled Time)
+        // 5. Geri Dön
         t = 0;
         Quaternion currentRot = source.transform.rotation;
         while (t < 1)
@@ -191,7 +189,7 @@ public class GameManager : MonoBehaviour
             yield return null;
         }
 
-        // 6. Yerine Git (Unscaled Time)
+        // 6. Yerine Git
         while (Vector3.Distance(source.transform.position, originalPos) > 0.1f)
         {
             source.transform.position = Vector3.MoveTowards(source.transform.position, originalPos, moveSpeed * Time.unscaledDeltaTime);
@@ -201,8 +199,6 @@ public class GameManager : MonoBehaviour
         source.transform.position = originalPos;
         source.transform.rotation = originalRot;
         if (sourceSort != null) sourceSort.sortingOrder = 0;
-
-        Debug.Log("Animasyon Bitti. Kontrol yapılıyor...");
 
         CheckWinCondition();
         DeselectBottle();
@@ -240,7 +236,6 @@ public class GameManager : MonoBehaviour
         Debug.Log("Oyun Yeniden Başlatıldı!");
     }
 
-    // --- DETAYLI DEBUG VERSİYONU ---
     void CheckWinCondition()
     {
         bool allSolved = true;
@@ -250,46 +245,45 @@ public class GameManager : MonoBehaviour
             if (!bottle.IsSolved())
             {
                 allSolved = false;
-                
-                // Neden bitmediğini konsola yaz
-                // Debug.LogWarning($"BİTMEDİ: {bottle.name} | Doluluk: {bottle.GetCount()}/{bottle.GetCapacity()}");
-                
                 break; 
             }
         }
 
         if (allSolved) 
         {
-            Debug.Log("TEBRİKLER! TÜM ŞİŞELER TAMAMLANDI! Ana oyuna dönülüyor...");
-            
-            // Realtime bekleme için Invoke yerine Coroutine kullanabiliriz ama 
-            // Invoke da TimeScale=0 iken çalışmayabilir!
-            // En garantisi Coroutine başlatmaktır.
+            Debug.Log("TEBRİKLER! TÜM ŞİŞELER TAMAMLANDI!");
             StartCoroutine(WaitAndReturn());
         }
     }
     
-    // Kazanma sonrası bekleme ve dönüş
     IEnumerator WaitAndReturn()
     {
         yield return new WaitForSecondsRealtime(2f); // 2 saniye bekle
         ReturnToMainGame();
     }
 
-void ReturnToMainGame()
+
+    void ReturnToMainGame()
     {
-        // 1. Zamanı tekrar akıt (Ana oyun canlansın)
-        Time.timeScale = 1;
 
-        // --- HATA BURADAYDI ---
-        // Eski: SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
-        // Bu kod yanlışlıkla Ana Sahneyi hedef alıyordu çünkü aktif olan oydu.
+        if (!string.IsNullOrEmpty(nextLevelName))
+        {
+            Debug.Log("Zincirleme Geçiş: " + nextLevelName + " sahnesine gidiliyor.");
+            
+           
+            PotionCollector.nextSceneToLoad = nextLevelName;
+            
+           
+            Time.timeScale = 0; 
+        }
+        else
+        {
+         
+            Debug.Log("Başka level yok. Ana oyuna dönülüyor.");
+            Time.timeScale = 1;
+        }
 
-        // --- DOĞRUSU ---
-        // gameObject.scene -> "Bu scriptin bağlı olduğu sahne" demektir.
-        // Yani direkt olarak "WaterSortMiniGame" sahnesini hedef alır.
+       
         SceneManager.UnloadSceneAsync(gameObject.scene);
-        
-        Debug.Log("Mini Game Başarıyla Yok Edildi.");
     }
 }

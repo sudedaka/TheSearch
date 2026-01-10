@@ -1511,6 +1511,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   miniGameCamera: {fileID: 961739752}
+  nextLevelName: TarotMiniGame
   bottles:
   - {fileID: 408493991}
   - {fileID: 1845479987}
