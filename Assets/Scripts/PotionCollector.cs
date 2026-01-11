@@ -112,8 +112,6 @@ public class PotionCollector : MonoBehaviour
             Time.timeScale = 0;
             return; 
         }*/
-
-     
         if (objectInRange != null && Input.GetKeyDown(collectKey))
         {
             if (objectInRange.CompareTag("Potion"))
@@ -126,8 +124,6 @@ public class PotionCollector : MonoBehaviour
             }
         }
     }
-
-
 
     // Çarpışma Kontrolleri
     void OnTriggerEnter(Collider other)
