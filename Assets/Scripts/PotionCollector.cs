@@ -99,8 +99,8 @@ public class PotionCollector : MonoBehaviour
     {
         if (Time.timeScale == 0) return;
 
-        // HİLE (F3 ile Level 3'ü aç)
-        if (Input.GetKeyDown(KeyCode.O))
+        // HİLE (O ile Level 3'ü aç)
+       /* if (Input.GetKeyDown(KeyCode.O))
         {
             miniGameIndex = 3; 
             if (uiListToHide != null) 
@@ -111,9 +111,9 @@ public class PotionCollector : MonoBehaviour
             SceneManager.LoadSceneAsync("TarotMiniGameLevel2", LoadSceneMode.Additive);
             Time.timeScale = 0;
             return; 
-        }
+        }*/
 
-        // --- YENİ: Etkileşim Tuşu ---
+     
         if (objectInRange != null && Input.GetKeyDown(collectKey))
         {
             if (objectInRange.CompareTag("Potion"))
@@ -126,6 +126,8 @@ public class PotionCollector : MonoBehaviour
             }
         }
     }
+
+
 
     // Çarpışma Kontrolleri
     void OnTriggerEnter(Collider other)
