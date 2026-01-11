@@ -18,20 +18,27 @@ public class PotionCollector : MonoBehaviour
     [Header("Envanter Referansı")]
     public InventoryController inventory;
 
-    private GameObject potionInRange;
+    // --- YENİ: Anahtar Objesi ---
+    [Header("Final Anahtarı")]
+    public GameObject finalKeyObject; // Sahnedeki anahtarı buraya sürükle
+
+    private GameObject objectInRange; // İsmi değiştirdim (Hem şişe hem anahtar olabilir)
 
     public static int savedPotionCount = 0; 
     public int potionCount = 0;
     public int miniGameIndex = 0;
 
-    // --- YENİ: Sırada yüklenecek sahnenin ismini tutan değişken ---
     public static string nextSceneToLoad = "";
+    
+    // --- YENİ: Oyun bitti mi kontrolü ---
+    public static bool allMiniGamesFinished = false; 
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void ResetStatics()
     {
         savedPotionCount = 0;
         nextSceneToLoad = "";
+        allMiniGamesFinished = false;
     }
 
     void OnEnable()
@@ -46,32 +53,30 @@ public class PotionCollector : MonoBehaviour
 
     void OnSceneUnloaded(Scene current)
     {
-        // --- KRİTİK GÜNCELLEME ---
-        // Eğer sırada yüklenecek bir sahne varsa (nextSceneToLoad doluysa),
-        // Ana Menü UI'ını açma, hemen o sahneyi yükle.
+        // 1. Eğer sırada başka level varsa (Zincirleme Geçiş)
         if (!string.IsNullOrEmpty(nextSceneToLoad))
         {
             Debug.Log("Zincirleme Geçiş Yapılıyor: " + nextSceneToLoad);
-            
-            // Yeni sahneyi ekle
             SceneManager.LoadSceneAsync(nextSceneToLoad, LoadSceneMode.Additive);
-            
-            // Zamanın duruk kalmasını garantiye al
             Time.timeScale = 0;
-
-            // Değişkeni sıfırla ki bir sonraki sefer karışmasın
             nextSceneToLoad = ""; 
             return; 
         }
 
-        // Eğer sırada level yoksa, demek ki gerçekten ana oyuna döndük. UI'ları aç.
+        // 2. Eğer tüm oyunlar bittiyse ANAHTARI AÇ
+        if (allMiniGamesFinished && finalKeyObject != null)
+        {
+            finalKeyObject.SetActive(true);
+            Debug.Log("🎉 BÜTÜN OYUNLAR BİTTİ! ANAHTAR ORTAYA ÇIKTI!");
+        }
+
+        // 3. UI'ları geri getir
         if (uiListToHide != null)
         {
             foreach (GameObject ui in uiListToHide)
             {
                 if (ui != null) ui.SetActive(true);
             }
-            Debug.Log("Ana Sahne UI Listesi Geri Geldi.");
         }
     }
 
@@ -82,74 +87,94 @@ public class PotionCollector : MonoBehaviour
 
         if (pressText != null) pressText.gameObject.SetActive(false);
         if (collectedText != null) collectedText.gameObject.SetActive(false);
+
+        // --- YENİ: Başlangıçta anahtarı gizle ---
+        if (finalKeyObject != null)
+        {
+            finalKeyObject.SetActive(false);
+        }
     }
 
     void Update()
     {
         if (Time.timeScale == 0) return;
 
-        if (potionInRange != null && Input.GetKeyDown(collectKey))
-        {
-            CollectPotion(potionInRange);
-        }
-    }
-
-/*void Update()
-    {
-        if (Time.timeScale == 0) return;
-
-     
+        // HİLE (F3 ile Level 3'ü aç)
         if (Input.GetKeyDown(KeyCode.O))
         {
-            Debug.Log(" HİLE AKTİF: Tarot  Level 1 Açılıyor...");
-
-            // UI'ları gizle
+            miniGameIndex = 3; 
             if (uiListToHide != null) 
             {
                 foreach (GameObject ui in uiListToHide)
-                {
                     if (ui != null) ui.SetActive(false);
-                }
             }
-
-            SceneManager.LoadSceneAsync("TarotMiniGame", LoadSceneMode.Additive);
-            
+            SceneManager.LoadSceneAsync("TarotMiniGameLevel2", LoadSceneMode.Additive);
             Time.timeScale = 0;
             return; 
         }
-        // -----------------------------
 
-        if (potionInRange != null && Input.GetKeyDown(collectKey))
+        // --- YENİ: Etkileşim Tuşu ---
+        if (objectInRange != null && Input.GetKeyDown(collectKey))
         {
-            CollectPotion(potionInRange);
+            if (objectInRange.CompareTag("Potion"))
+            {
+                CollectPotion(objectInRange);
+            }
+            else if (objectInRange.CompareTag("Key")) // Eğer anahtarsa
+            {
+                CollectKey(objectInRange);
+            }
         }
-    }*/
+    }
 
-
-
-
+    // Çarpışma Kontrolleri
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Potion"))
+        if (other.CompareTag("Potion") || other.CompareTag("Key"))
         {
-            potionInRange = other.gameObject;
-            if (pressText != null) pressText.gameObject.SetActive(true);
+            objectInRange = other.gameObject;
+            if (pressText != null) 
+            {
+                pressText.text = "Press 'P' to Collect"; // Yazıyı güncelle
+                pressText.gameObject.SetActive(true);
+            }
         }
     }
 
     void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Potion"))
+        if (other.CompareTag("Potion") || other.CompareTag("Key"))
         {
-            potionInRange = null;
+            objectInRange = null;
             if (pressText != null) pressText.gameObject.SetActive(false);
+        }
+    }
+
+    // --- YENİ: Anahtar Toplama Fonksiyonu ---
+    void CollectKey(GameObject keyObj)
+    {
+        KeyPickup pickup = keyObj.GetComponent<KeyPickup>();
+        if (pickup != null && pickup.keyIcon != null && inventory != null)
+        {
+            // İksir ekler gibi anahtarı envantere ekle
+            // (Inventory scriptinin bu metoda uygun olması lazım, yoksa potionIcon yerine genel bir ikon sistemi gerekebilir)
+            inventory.AddPotion(pickup.keyIcon); 
+        }
+
+        Destroy(keyObj); // Sahneden sil
+        Debug.Log("ANAHTAR ALINDI!");
+        
+        // İstersen burada "Tebrikler" yazısı çıkarabilirsin
+        if (collectedText != null)
+        {
+            collectedText.text = "Mystery Key Collected!";
+            StartCoroutine(ShowCollectedMessage());
         }
     }
 
     void CollectPotion(GameObject potion)
     {
-        if (potion == null) return;
-
+        // ... (Eski kodun aynısı) ...
         PotionPickup pickup = potion.GetComponent<PotionPickup>();
         if (pickup != null && pickup.potionIcon != null && inventory != null)
         {
@@ -166,7 +191,6 @@ public class PotionCollector : MonoBehaviour
         if (potionCount % 2 == 0 && potionCount <= 6)
         {
             miniGameIndex = potionCount / 2;
-            
             string sceneToLoad = "";
 
             if (miniGameIndex == 1) sceneToLoad = "WaterSortMiniGame"; 
@@ -178,16 +202,12 @@ public class PotionCollector : MonoBehaviour
                 if (uiListToHide != null) 
                 {
                     foreach (GameObject ui in uiListToHide)
-                    {
                         if (ui != null) ui.SetActive(false);
-                    }
                 }
-
                 SceneManager.LoadSceneAsync(sceneToLoad, LoadSceneMode.Additive);
                 Time.timeScale = 0;
             }
         }
-
         if (pressText != null) pressText.gameObject.SetActive(false);
         if (collectedText != null) StartCoroutine(ShowCollectedMessage());
     }

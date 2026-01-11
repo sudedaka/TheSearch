@@ -148,27 +148,27 @@ public class MemoryGameManager : MonoBehaviour
         ReturnToMainGame();
     }
 
-    void ReturnToMainGame()
+  void ReturnToMainGame()
     {
-        
+        // Eğer sırada başka level varsa (Zincirleme)
         if (!string.IsNullOrEmpty(nextLevelName))
         {
             Debug.Log("Zincirleme Geçiş: " + nextLevelName);
-            
-            // PotionCollectora haber ver
             PotionCollector.nextSceneToLoad = nextLevelName;
-            
-            // Zaman hala duruk kalsın(za warudo)
             Time.timeScale = 0; 
         }
         else
         {
-            // Sırada level yoksa ana oyuna dön
-            Debug.Log("Tüm Mini Gameler Bitti -> Ana Sahne");
+            // SIRADA LEVEL YOK -> DEMEK Kİ OYUN BİTTİ!
+            Debug.Log("Tüm Mini Gameler Bitti -> Final Anahtarı Aktifleşiyor.");
+            
+            // --- YENİ: Anahtarı açacak sinyali gönder ---
+            PotionCollector.allMiniGamesFinished = true;
+            // -------------------------------------------
+            
             Time.timeScale = 1;
         }
 
-        // Bu sahneyi  yok et
         SceneManager.UnloadSceneAsync(gameObject.scene);
     }
 }
