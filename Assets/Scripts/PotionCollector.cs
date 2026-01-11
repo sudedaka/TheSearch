@@ -20,9 +20,9 @@ public class PotionCollector : MonoBehaviour
 
     // --- YENİ: Anahtar Objesi ---
     [Header("Final Anahtarı")]
-    public GameObject finalKeyObject; // Sahnedeki anahtarı buraya sürükle
+    public GameObject finalKeyObject; 
 
-    private GameObject objectInRange; // İsmi değiştirdim (Hem şişe hem anahtar olabilir)
+    private GameObject objectInRange; 
 
     public static int savedPotionCount = 0; 
     public int potionCount = 0;
@@ -156,15 +156,14 @@ public class PotionCollector : MonoBehaviour
         KeyPickup pickup = keyObj.GetComponent<KeyPickup>();
         if (pickup != null && pickup.keyIcon != null && inventory != null)
         {
-            // İksir ekler gibi anahtarı envantere ekle
-            // (Inventory scriptinin bu metoda uygun olması lazım, yoksa potionIcon yerine genel bir ikon sistemi gerekebilir)
+          
             inventory.AddPotion(pickup.keyIcon); 
         }
 
         Destroy(keyObj); // Sahneden sil
         Debug.Log("ANAHTAR ALINDI!");
         
-        // İstersen burada "Tebrikler" yazısı çıkarabilirsin
+       
         if (collectedText != null)
         {
             collectedText.text = "Mystery Key Collected!";
@@ -174,7 +173,7 @@ public class PotionCollector : MonoBehaviour
 
     void CollectPotion(GameObject potion)
     {
-        // ... (Eski kodun aynısı) ...
+        
         PotionPickup pickup = potion.GetComponent<PotionPickup>();
         if (pickup != null && pickup.potionIcon != null && inventory != null)
         {
